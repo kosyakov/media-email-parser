@@ -56,10 +56,11 @@ class StdinParser(IPageParser):
         msg: EmailMessage = email.message_from_binary_file(sys.stdin.buffer, _class=EmailMessage, policy=policy.default)
 
         page = EmailPage()
-        page.id = msg['Message-ID'].strip('<>')
         page.date = parsedate_to_datetime(msg['Date'])
         page.sender = str(msg['From'])
         page.subject = str(msg["Subject"])
+        id_header = msg['Message-ID']
+        page.id = id_header.strip('<>') if id_header else str(page.date.timestamp())
         body = msg.get_body(("html", "plain"))
         body_encoding = body.get('Content-Type', 'text/plain; charset=UTF-8')
         page.text = body.get_content()
@@ -201,8 +202,11 @@ class Application:
         self.site_builder: ISiteBuilder = StaticHtmlSiteBuilder(self.OPTIONS.output)
 
     def run(self):
-        page = self.parser.get_page()
-        self.registry.save_page(page)
+        try:
+            page = self.parser.get_page()
+            self.registry.save_page(page)
+        except Exception as e:
+            self.logger.error("Unable to save page from stdin: " + str(e))
         pages = list(self.registry.get_recent_pages())
         self.site_builder.build_site(pages)
 
