@@ -126,7 +126,8 @@ class StaticHtmlSiteBuilder(ISiteBuilder):
 
 
 class SQLitePageRegistry(IPageRegistry):
-    def __init__(self, path_to_file):
+    def __init__(self, path_to_file: str, recent_period_days : int = 15):
+        self._recent_period_days = recent_period_days
         self._path_to_file = path_to_file
         self.log = logging.getLogger(__class__.__name__)
         self.log.debug(f'Setting up sqlite-based registry in "{self._path_to_file}"')
@@ -162,7 +163,7 @@ class SQLitePageRegistry(IPageRegistry):
                 self.log.debug(f'Failed saving page {page}: {e}')
 
     def get_recent_pages(self) -> Iterable[EmailPage]:
-        last_datetime = (datetime.now() - timedelta(days=240))
+        last_datetime = (datetime.now() - timedelta(days=self._recent_period_days))
         oldest_ts = int(last_datetime.timestamp())
         self.log.debug(f"Getting all pages since {last_datetime} = {oldest_ts}")
         with self.connection:
@@ -183,8 +184,8 @@ class Application:
         self.logger.debug("Starting the application")
         self._create_options()
         self.parser: IPageParser = StdinParser()
-        self.registry: IPageRegistry = SQLitePageRegistry('/tmp/media-site.sqlite3')
-        self.site_builder: ISiteBuilder = StaticHtmlSiteBuilder("/tmp/media-site")
+        self.registry: IPageRegistry = SQLitePageRegistry(self.OPTIONS.database, recent_period_days=self.OPTIONS.days)
+        self.site_builder: ISiteBuilder = StaticHtmlSiteBuilder(self.OPTIONS.output)
 
     def run(self):
         page = self.parser.get_page()
@@ -195,7 +196,9 @@ class Application:
     def _create_options(self):
         import argparse
         parser = argparse.ArgumentParser(description='News digest builder')
-        parser.add_argument('-o', '--output', metavar="output_dir", help="output folder")
+        parser.add_argument('-o', '--output', metavar="output_dir", help="output folder", required=True)
+        parser.add_argument('-d', '--database', metavar="db_file", help="database file location", required=True)
+        parser.add_argument('-D', '--days', metavar="days_ago", type=int, help="days to include into index", required=True)
         self.OPTIONS = parser.parse_args()
         self.logger.debug(f'Running with options {self.OPTIONS}')
 
