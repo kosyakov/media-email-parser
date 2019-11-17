@@ -30,7 +30,7 @@ class EmailPage:
         self.text = text
 
     def __repr__(self):
-        return f'EmailPage({self.id[:20]}, {self.subject}, from {self.sender})'
+        return f'EmailPage({self.id}, {self.subject}, from {self.sender})'
 
 
 class IPageRegistry:  # interface
@@ -52,13 +52,18 @@ class ISiteBuilder:
 
 
 class StdinParser(IPageParser):
-    def get_page(self) -> EmailPage:
-        msg: EmailMessage = email.message_from_binary_file(sys.stdin.buffer, _class=EmailMessage, policy=policy.default)
+    def __init__(self):
+        self.log = logging.getLogger(__class__.__name__)
 
+
+    def get_page(self) -> EmailPage:
+        self.log.debug("Going to read a message from stdin")
+        msg: EmailMessage = email.message_from_binary_file(sys.stdin.buffer, _class=EmailMessage, policy=policy.default)
         page = EmailPage()
         page.date = parsedate_to_datetime(msg['Date'])
         page.sender = str(msg['From'])
         page.subject = str(msg["Subject"])
+        self.log.debug(f"Got so far {page}")
         id_header = msg['Message-ID']
         page.id = id_header.strip('<>') if id_header else str(page.date.timestamp())
         body = msg.get_body(("html", "plain"))
