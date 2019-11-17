@@ -59,7 +59,7 @@ class StdinParser(IPageParser):
     def get_page(self) -> EmailPage:
         self.log.debug("Going to read a message from stdin")
         msg: EmailMessage = email.message_from_binary_file(sys.stdin.buffer, _class=EmailMessage, policy=policy.default)
-        self.log.debug(f"Got so far {msg}")
+        self.log.debug(f"Got so far {msg['Subject']}")
         page = EmailPage()
         page.date = parsedate_to_datetime(msg['Date'])
         page.sender = str(msg['From'])
