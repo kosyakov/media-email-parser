@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import base64
+import html
 import email
 import logging
 import os
@@ -82,7 +82,15 @@ class StdinParser(IPageParser):
 class StaticHtmlSiteBuilder(ISiteBuilder):
     def __init__(self, output_directory: str):
         self._output_directory = output_directory
+        self.date_format = '%d %b, %Y (%a) %H:%M'
         self.log = logging.getLogger(__class__.__name__)
+        self.CSS_STYLE="""
+* { line-height:200%;}
+ul {padding:0;}
+li {padding:0;}
+.date { font-size: 80%; }
+.sender { font-size: 100%; }
+        """
 
     def build_site(self, pages: Iterable[EmailPage]):
         self.log.debug(f'Creating a static site in "{self._output_directory}"')
@@ -92,9 +100,9 @@ class StaticHtmlSiteBuilder(ISiteBuilder):
         <!doctype html><html lang="en">
         <head>
           <meta charset="utf-8">
-          <title>News {datetime.now().strftime("%Y-%m-%d %H:%M")}</title>
+          <title>News {datetime.now().strftime(self.date_format)}</title>
         <style>
-        * {{ line-height:200%;}}
+        {self.CSS_STYLE}
         </style>
         </head>
         <body>
@@ -103,9 +111,10 @@ class StaticHtmlSiteBuilder(ISiteBuilder):
         n = 0
         for page in pages:
             filename = self.save_page_to_a_file(page)
+            sender = self.get_sender(page)
             index_lines.append(f"""
             <li>
-                {page.sender}: <a href="./{filename}">{page.subject}</a> <br/> {page.date.strftime('%A, %d %b, %Y %H:%M')}  
+                <span class="sender">{sender}:<span><a class="title" href="./{filename}">{html.escape(page.subject)}</a>. <span class="date">{page.date.strftime(self.date_format)}</span>
             </li>
             """)
             n += 1
@@ -117,6 +126,10 @@ class StaticHtmlSiteBuilder(ISiteBuilder):
         self.log.debug(f"Writing index file with list of {n} pages ")
         with open(os.path.join(self._output_directory, 'index.html'), 'wb') as f:
             f.writelines(l.encode('utf-8') for l in index_lines)
+
+    def get_sender(self, page):
+        sender, _, __ = page.sender.partition('<')
+        return html.escape(sender).strip(' ')
 
     def save_page_to_a_file(self, page):
         filename = page.id.replace('@', '').replace('.', '') + '.html'
