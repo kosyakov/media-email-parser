@@ -104,9 +104,9 @@ class StaticHtmlSiteBuilder(ISiteBuilder):
         self.CSS_STYLE="""
 * { font-family: Arial, Helvetica}
 ul {padding:0;}
-li { padding:0.5em 0 0.5em 0; border-top: 1px solid #eee; }
-a.title { font-size: 110%; border-bottom: 1px dotted; text-decoration: none; }
-.sender { font-size: 100%; }
+li { padding:0.5cm 0 0.5cm 0; border-top: 1px solid #eee; }
+a.title { font-size: 120%; border-bottom: 1px dotted; text-decoration: none; }
+.sender { color: #333; }
 .date { font-size: 80%; }
         """
 
