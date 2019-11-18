@@ -6,6 +6,7 @@ import os
 import re
 import sqlite3
 import sys
+import traceback
 from datetime import datetime, timedelta
 from email import policy
 from email.message import EmailMessage
@@ -215,6 +216,7 @@ class Application:
             self.registry.save_page(page)
         except Exception as e:
             self.logger.error("Unable to save page from stdin: " + str(e))
+            traceback.print_exc(file=sys.stderr)
         pages = list(self.registry.get_recent_pages())
         self.site_builder.build_site(pages)
 
