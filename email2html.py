@@ -64,7 +64,8 @@ class StdinParser(IPageParser):
         msg: EmailMessage = email.message_from_string(''.join(lines), _class=EmailMessage, policy=policy.default)
         self.log.debug(f"Got so far {msg['Subject']}")
         page = EmailPage()
-        page.date = parsedate_to_datetime(msg['Date'])
+        msg_date = msg['Date']
+        page.date = parsedate_to_datetime(msg_date) if msg_date else datetime.now()
         page.sender = str(msg['From'])
         page.subject = str(msg["Subject"])
         self.log.debug(f"Parsed so far to {page}")
