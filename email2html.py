@@ -170,7 +170,7 @@ class SQLitePageRegistry(IPageRegistry):
                  sender TEXT,
                  subject TEXT,
                  content_type TEXT,
-                 body BLOB
+                 body TEXT
             );
             """)
 
