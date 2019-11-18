@@ -60,9 +60,11 @@ class StdinParser(IPageParser):
     def get_page(self) -> EmailPage:
         self.log.debug("Going to read a message from stdin")
         lines = [l for l in sys.stdin]
-        if lines[0].startswith('From '): lines.pop(0)
+        self.log.debug(f'Got {len(lines)} lines, the first one is {lines[0].strip()}')
+        while not self.is_a_header_line(lines[0]):
+            lines.pop(0)
+            self.log.debug(f"Removed the first line, left with {len(lines)} lines")
         msg: EmailMessage = email.message_from_string(''.join(lines), _class=EmailMessage, policy=policy.default)
-        self.log.debug(f"Got so far {msg['Subject']}")
         page = EmailPage()
         msg_date = msg['Date']
         page.date = parsedate_to_datetime(msg_date) if msg_date else datetime.now()
@@ -88,6 +90,10 @@ class StdinParser(IPageParser):
         type, subtype = full_type.split('/')
         content_type = subtype if type == 'text' else 'binary'
         return content_type.lower(), charset.lower()
+
+    def is_a_header_line(self, line: str):
+        name, _, value = line.partition(':')
+        return ' ' not in name
 
 
 class StaticHtmlSiteBuilder(ISiteBuilder):
@@ -233,6 +239,6 @@ class Application:
 
 if __name__ == '__main__':
     logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG)
+    logging.basicConfig(format='%(asctime)s\t%(levelname)s\t%(name)s\t%(message)s', level=logging.DEBUG)
     logger.addHandler(logging.StreamHandler(sys.stderr))
     Application().run()
