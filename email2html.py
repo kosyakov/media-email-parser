@@ -102,11 +102,12 @@ class StaticHtmlSiteBuilder(ISiteBuilder):
         self.date_format = '%d %b, %Y (%a) %H:%M'
         self.log = logging.getLogger(__class__.__name__)
         self.CSS_STYLE="""
-* { line-height:200%;}
+* { font-family: Arial, Helvetica}
 ul {padding:0;}
-li {padding:0;}
-.date { font-size: 80%; }
+li { padding:0.5em 0 0.5em 0; border-top: 1px solid #eee; }
+a.title { font-size: 110%; border-bottom: 1px dotted; text-decoration: none; }
 .sender { font-size: 100%; }
+.date { font-size: 80%; }
         """
 
     def build_site(self, pages: Iterable[EmailPage]):
@@ -131,7 +132,7 @@ li {padding:0;}
             sender = self.get_sender(page)
             index_lines.append(f"""
             <li>
-                <span class="sender">{sender}:<span><a class="title" href="./{filename}">{html.escape(page.subject)}</a>. <span class="date">{page.date.strftime(self.date_format)}</span>
+                <span class="sender">{sender}:</span> <a class="title" href="./{filename}">{html.escape(page.subject)}</a>. <span class="date">{page.date.strftime(self.date_format)}</span>
             </li>
             """)
             n += 1
