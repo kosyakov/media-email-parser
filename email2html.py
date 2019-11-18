@@ -102,8 +102,8 @@ class StaticHtmlSiteBuilder(ISiteBuilder):
         self.CSS_STYLE="""
 * { font-family: Arial, Helvetica}
 ul {padding:0;}
-li { padding:0.5cm 0 0.5cm 0; border-top: 1px solid #eee; }
-a.title { font-size: 120%; border-bottom: 1px dotted; text-decoration: none; }
+li { padding:0.75cm 0 0.75cm 0; border-top: 1px solid #ccc; }
+a.title { font-size: 120%; text-decoration: none; }
 .sender { color: #333; }
 .date { font-size: 80%; }
         """
@@ -130,7 +130,7 @@ a.title { font-size: 120%; border-bottom: 1px dotted; text-decoration: none; }
             sender = self.get_sender(page)
             index_lines.append(f"""
             <li>
-                <span class="sender">{sender}:</span> <a class="title" href="./{filename}">{html.escape(page.subject)}</a>. <span class="date">{page.date.strftime(self.date_format)}</span>
+                <a class="title" href="./{filename}">{html.escape(page.subject)}</a> — <span class="sender">{sender}</span> / <span class="date">{page.date.strftime(self.date_format)}</span>
             </li>
             """)
             n += 1
