@@ -65,14 +65,12 @@ class StdinParser(IPageParser):
             lines.pop(0)
             self.log.debug(f"Removed the first line, left with {len(lines)} lines")
         msg: EmailMessage = email.message_from_string(''.join(lines), _class=EmailMessage, policy=policy.default)
+        self.log.debug(f'Parsed email message from {len(lines)} line with {len(msg.defects)} defects')
         page = EmailPage()
-        msg_date = msg['Date']
-        page.date = parsedate_to_datetime(msg_date) if msg_date else datetime.now()
+        page.date = parsedate_to_datetime(msg['Date']) if msg['Date'] else datetime.now()
         page.sender = str(msg['From'])
         page.subject = str(msg["Subject"])
-        self.log.debug(f"Parsed so far to {page}")
-        id_header = msg['Message-ID']
-        page.id = id_header.strip('<>') if id_header else str(page.date.timestamp())
+        page.id = msg['Message-ID'].strip('<>')
         body = msg.get_body(("html", "plain"))
         body_encoding = body.get('Content-Type', 'text/plain; charset=UTF-8')
         page.text = body.get_content()
