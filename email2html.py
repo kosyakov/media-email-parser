@@ -82,7 +82,7 @@ class StdinParser(IPageParser):
 
     @staticmethod
     def get_content_type_and_charset(content_type_header):
-        full_type, charset = content_type_header.split(';') if ';' in content_type_header else ('text/plain', 'charset=utf-8')
+        full_type, charset = content_type_header.split(';', 1) if ';' in content_type_header else ('text/plain', 'charset=utf-8')
         match = re.match(r'charset="([^"])"', charset, re.IGNORECASE)
         charset = match.group(1) if match else 'utf-8'
         type, subtype = full_type.split('/')
