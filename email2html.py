@@ -3,6 +3,7 @@ import html
 import email
 import logging
 import os
+import pickle
 import re
 import sqlite3
 import sys
@@ -11,7 +12,7 @@ from datetime import datetime, timedelta
 from email import policy
 from email.message import EmailMessage
 from email.utils import parsedate_to_datetime
-from typing import Iterable
+from typing import Iterable, Tuple, List
 
 
 class EmailPage:
@@ -21,6 +22,7 @@ class EmailPage:
                  sender: str = None,
                  subject: str = None,
                  content_type: str = None,
+                 headers: List[Tuple[str, str]] = None,
                  text: str = None,
                  ):
         self.id = id
@@ -28,6 +30,7 @@ class EmailPage:
         self.sender = sender
         self.subject = subject
         self.content_type = content_type
+        self.headers: List[Tuple[str, str]] = headers if headers else []
         self.text = text
 
     def __repr__(self):
@@ -71,6 +74,7 @@ class StdinParser(IPageParser):
         page.sender = str(msg['From'])
         page.subject = str(msg["Subject"])
         page.id = msg['Message-ID'].strip('<>')
+        page.headers = msg.items()
         body = msg.get_body(("html", "plain"))
         body_encoding = body.get('Content-Type', 'text/plain; charset=UTF-8')
         page.text = body.get_content()
@@ -151,6 +155,9 @@ a.title { font-size: 120%; text-decoration: none; }
         filename = page.id.replace('@', '').replace('.', '') + '.html'
         with open(os.path.join(self._output_directory, filename), 'w') as f:
             f.write(page.text)
+            f.write("\n\n<!-- Headers:\n")
+            f.write("\n".join(f'{n}: {v}' for n,v in page.headers))
+            f.write("\n\n-->\n")
         return filename
 
 
@@ -169,6 +176,7 @@ class SQLitePageRegistry(IPageRegistry):
                  sender TEXT,
                  subject TEXT,
                  content_type TEXT,
+                 headers TEXT,
                  body TEXT
             );
             """)
@@ -179,13 +187,14 @@ class SQLitePageRegistry(IPageRegistry):
             try:
                 self.connection.execute("""
                 INSERT INTO page(id, message_timestamp, sender, subject, content_type, body)
-                VALUES(:id, :message_timestamp, :sender, :subject, :content_type, :body)
+                VALUES(:id, :message_timestamp, :sender, :subject, :content_type, :headers, :body)
                 """, {
                     'id': page.id,
                     'message_timestamp': int(page.date.timestamp()),
                     'sender': page.sender,
                     'subject': page.subject,
                     'content_type': page.content_type,
+                    'headers': pickle.dumps(page.headers),
                     'body': page.text}
                                         )
             except sqlite3.IntegrityError as e:
@@ -203,6 +212,7 @@ class SQLitePageRegistry(IPageRegistry):
                     sender=row['sender'],
                     subject=row['subject'],
                     content_type=row['content_type'],
+                    headers=pickle.loads(row['headers']),
                     text=row['body']
                 )
 
